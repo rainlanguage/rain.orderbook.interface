@@ -10,7 +10,7 @@ import {
 } from "rain.interpreter.interface/interface/IInterpreterCallerV2.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {IO, ClearConfig, ClearStateChange} from "../deprecated/v2/IOrderBookV2.sol";
+import {IO, ClearConfig, ClearStateChange} from "../IOrderBookV3.sol";
 
 /// Thrown when take orders is called with no orders.
 error NoOrders();
@@ -204,7 +204,7 @@ struct TakeOrdersConfigV2 {
 /// deactivates them. This is gas efficient as order owners MAY deposit more
 /// tokens in a vault with an order against it many times and the order strategy
 /// will continue to be clearable according to its expression. As vault IDs are
-/// `uint256` values there are effectively infinite possible vaults for any token
+/// `bytes` values there are effectively infinite possible vaults for any token
 /// so there is no limit to how many active orders any address can have at one
 /// time. This also allows orders to be daisy chained arbitrarily where output
 /// vaults for some order are the input vaults for some other order.
@@ -243,7 +243,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
     /// @param vaultId The vault ID the tokens are being deposited under.
-    error ZeroDepositAmount(address sender, address token, uint256 vaultId);
+    error ZeroDepositAmount(address sender, address token, bytes vaultId);
 
     /// MUST be thrown by `withdraw` if the amount _requested_ to withdraw is
     /// zero. The withdrawal MAY still not move any tokens if the vault balance
@@ -251,7 +251,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param sender `msg.sender` withdrawing tokens.
     /// @param token The token being withdrawn.
     /// @param vaultId The vault ID the tokens are being withdrawn from.
-    error ZeroWithdrawTargetAmount(address sender, address token, uint256 vaultId);
+    error ZeroWithdrawTargetAmount(address sender, address token, bytes vaultId);
 
     /// MUST be thrown by `addOrder` if the order has no associated calculation.
     error OrderNoSources();
@@ -271,7 +271,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param token The token being deposited.
     /// @param vaultId The vault ID the tokens are being deposited under.
     /// @param amount The amount of tokens deposited.
-    event Deposit(address sender, address token, uint256 vaultId, uint256 amount);
+    event Deposit(address sender, address token, bytes vaultId, uint256 amount);
 
     /// Some tokens have been withdrawn from a vault.
     /// @param sender `msg.sender` withdrawing tokens. Delegated withdrawals are
@@ -283,7 +283,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// target amount if the vault does not have the funds available to cover
     /// the target amount. For example an active order might move tokens before
     /// the withdraw completes.
-    event Withdraw(address sender, address token, uint256 vaultId, uint256 targetAmount, uint256 amount);
+    event Withdraw(address sender, address token, bytes vaultId, uint256 targetAmount, uint256 amount);
 
     /// An order has been added to the orderbook. The order is permanently and
     /// always active according to its expression until/unless it is removed.
@@ -390,7 +390,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param token The token to deposit.
     /// @param vaultId The vault ID to deposit under.
     /// @param amount The amount of tokens to deposit.
-    function deposit(address token, uint256 vaultId, uint256 amount) external;
+    function deposit(address token, bytes calldata vaultId, uint256 amount) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -408,7 +408,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// result in fewer tokens withdrawn if the vault balance is lower than the
     /// target amount. MAY NOT be zero, the order book MUST revert with
     /// `ZeroWithdrawTargetAmount` if the amount is zero.
-    function withdraw(address token, uint256 vaultId, uint256 targetAmount) external;
+    function withdraw(address token, bytes calldata vaultId, uint256 targetAmount) external;
 
     /// Given an order config, deploys the expression and builds the full `Order`
     /// for the config, then records it as an active order. Delegated adding an
