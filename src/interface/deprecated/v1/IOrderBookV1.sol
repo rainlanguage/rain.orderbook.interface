@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: CAL
 pragma solidity ^0.8.18;
 
-import "../ierc3156/IERC3156FlashLender.sol";
+import "../../ierc3156/IERC3156FlashLender.sol";
 import "rain.interpreter.interface/lib/caller/LibEvaluable.sol";
 import "rain.interpreter.interface/interface/deprecated/IInterpreterCallerV1.sol";
 
