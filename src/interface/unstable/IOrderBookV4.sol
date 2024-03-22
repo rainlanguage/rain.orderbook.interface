@@ -389,9 +389,9 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// Get the current balance of a vault for a given owner, token and vault ID.
     /// @param owner The owner of the vault.
     /// @param token The token the vault is for.
-    /// @param id The vault ID to read.
+    /// @param vaultId The vault ID to read.
     /// @return balance The current balance of the vault.
-    function vaultBalance(address owner, address token, uint256 id) external view returns (uint256 balance);
+    function vaultBalance(address owner, address token, bytes calldata vaultId) external view returns (uint256 balance);
 
     /// `msg.sender` deposits tokens according to config. The config specifies
     /// the vault to deposit tokens under. Delegated depositing is NOT supported.
