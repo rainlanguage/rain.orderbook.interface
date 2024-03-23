@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: CAL
 pragma solidity ^0.8.18;
 
-import "../ierc3156/IERC3156FlashLender.sol";
-import {IExpressionDeployerV3, EvaluableV2} from "rain.interpreter.interface/lib/caller/LibEvaluable.sol";
+import {IERC3156FlashLender} from "../ierc3156/IERC3156FlashLender.sol";
 import {
-    EvaluableConfigV3,
-    IInterpreterCallerV2,
+    EvaluableV3,
+    IInterpreterCallerV3,
     SignedContextV1
-} from "rain.interpreter.interface/interface/IInterpreterCallerV2.sol";
+} from "rain.interpreter.interface/interface/unstable/IInterpreterCallerV3.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
 import {ClearStateChange} from "../IOrderBookV3.sol";
@@ -62,18 +61,24 @@ struct IOV2 {
 /// the expression deployer that they specify. However they MAY specify a
 /// deployer with a corrupt integrity check, so counterparties and clearers MUST
 /// check the DISpair of the order and avoid untrusted pairings.
+/// @param evaluable Standard `EvaluableV3` used to evaluate the order.
 /// @param validInputs As per `validInputs` on the `Order`.
 /// @param validOutputs As per `validOutputs` on the `Order`.
-/// @param evaluableConfig Standard `EvaluableConfig` used to produce the
-/// `Evaluable` on the order.
 /// @param meta Arbitrary bytes that will NOT be used in the order evaluation
 /// but MUST be emitted as a Rain `MetaV1` when the order is placed so can be
 /// used by offchain processes.
+/// @param secret If nonzero, the secret will be included in the order hash and
+/// will cause the order to NOT be emitted in the `AddOrder` event. This allows
+/// the order owner to place a secret order that is not visible onchain but can
+/// still be cleared by counterparties, if they know the full order including the
+/// secret. This is useless on most chains as all data is public, but MAY be
+/// useful on confidential chains that can protect calldata, memory and storage.
 struct OrderConfigV3 {
+    EvaluableV3 evaluable;
     IOV2[] validInputs;
     IOV2[] validOutputs;
-    EvaluableConfigV3 evaluableConfig;
     bytes meta;
+    uint256 secret;
 }
 
 /// Config for an individual take order from the overall list of orders in a
@@ -95,8 +100,6 @@ struct TakeOrderConfigV3 {
 /// Defines a fully deployed order ready to evaluate by Orderbook. Identical to
 /// `Order` except for the newer `EvaluableV2`.
 /// @param owner The owner of the order is the `msg.sender` that added the order.
-/// @param handleIO true if there is a "handle IO" entrypoint to run. If false
-/// the order book MAY skip calling the interpreter to save gas.
 /// @param evaluable Standard `EvaluableV2` with entrypoints for both
 /// "calculate order" and "handle IO". The latter MAY be empty bytes, in which
 /// case it will be skipped at runtime to save gas.
@@ -108,10 +111,10 @@ struct TakeOrderConfigV3 {
 /// so these tokens will be sent from the owners vault.
 struct OrderV3 {
     address owner;
-    bool handleIO;
-    EvaluableV2 evaluable;
+    EvaluableV3 evaluable;
     IOV2[] validInputs;
     IOV2[] validOutputs;
+    uint256 secret;
 }
 
 /// Config for a list of orders to take sequentially as part of a `takeOrders`
@@ -268,7 +271,7 @@ struct TakeOrdersConfigV3 {
 ///
 /// Main differences between `IOrderBookV3` and `IOderBookV4`:
 /// - `vaultId` is now `bytes` instead of `uint256`.
-interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV2 {
+interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// MUST be thrown by `deposit` if the amount is zero.
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
@@ -318,17 +321,23 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// An order has been added to the orderbook. The order is permanently and
     /// always active according to its expression until/unless it is removed.
     /// @param sender `msg.sender` adding the order and is owner of the order.
-    /// @param expressionDeployer The expression deployer that ran the integrity
-    /// check for this order. This is NOT included in the `Order` itself but is
-    /// important for offchain processes to ignore untrusted deployers before
-    /// interacting with them.
     /// @param order The newly added order. MUST be handed back as-is when
     /// clearing orders and contains derived information in addition to the order
     /// config that was provided by the order owner.
     /// @param orderHash The hash of the order as it is recorded onchain. Only
     /// the hash is stored in Orderbook storage to avoid paying gas to store the
     /// entire order.
-    event AddOrder(address sender, IExpressionDeployerV3 expressionDeployer, OrderV3 order, bytes32 orderHash);
+    event AddOrder(address sender, OrderV3 order, bytes32 orderHash);
+
+    /// An order has been added to the orderbook with a secret. The order is
+    /// permanently and always active according to its expression until/unless it
+    /// is removed. The order is not emitted in the `AddOrder` event and is only
+    /// visible to the owner and the counterparty that clears it.
+    /// @param sender `msg.sender` adding the order and is owner of the order.
+    /// @param orderHash The hash of the order as it is recorded onchain. Only
+    /// the hash is stored in Orderbook storage to avoid paying gas to store the
+    /// entire order.
+    event AddSecretOrder(address sender, bytes32 orderHash);
 
     /// An order has been removed from the orderbook. This effectively
     /// deactivates it. Orders can be added again after removal.
@@ -391,7 +400,10 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param token The token the vault is for.
     /// @param vaultId The vault ID to read.
     /// @return balance The current balance of the vault.
-    function vaultBalance(address owner, address token, bytes calldata vaultId) external view returns (uint256 balance);
+    function vaultBalance(address owner, address token, bytes calldata vaultId)
+        external
+        view
+        returns (uint256 balance);
 
     /// `msg.sender` deposits tokens according to config. The config specifies
     /// the vault to deposit tokens under. Delegated depositing is NOT supported.
