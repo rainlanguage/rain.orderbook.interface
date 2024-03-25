@@ -9,33 +9,13 @@ import {
 } from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV3.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {ClearStateChange, ClearConfig} from "../IOrderBookV3.sol";
+import {ClearStateChange, ClearConfig, IO} from "../IOrderBookV3.sol";
 
 /// Thrown when take orders is called with no orders.
 error NoOrders();
 
 /// Thrown when take orders is called with a zero maximum input.
 error ZeroMaximumInput();
-
-/// Configuration for a single input or output on an `Order`.
-/// @param token The token to either send from the owner as an output or receive
-/// from the counterparty to the owner as an input. The tokens are not moved
-/// during an order, only internal vault balances are updated, until a separate
-/// withdraw step.
-/// @param decimals The decimals to use for internal scaling calculations for
-/// `token`. This is provided directly in IO to save gas on external lookups and
-/// to respect the ERC20 spec that mandates NOT assuming or using the `decimals`
-/// method for onchain calculations. Ostensibly the decimals exists so that all
-/// calculate order entrypoints can treat amounts and ratios as 18 decimal fixed
-/// point values. Order max amounts MUST be rounded down and IO ratios rounded up
-/// to compensate for any loss of precision during decimal rescaling.
-/// @param vaultId The vault ID that tokens will move into if this is an input
-/// or move out from if this is an output.
-struct IOV2 {
-    address token;
-    uint8 decimals;
-    bytes vaultId;
-}
 
 /// Config the order owner may provide to define their order. The `msg.sender`
 /// that adds an order cannot modify the owner nor bypass the integrity check of
@@ -54,8 +34,8 @@ struct IOV2 {
 /// used by offchain processes.
 struct OrderConfigV3 {
     EvaluableV3 evaluable;
-    IOV2[] validInputs;
-    IOV2[] validOutputs;
+    IO[] validInputs;
+    IO[] validOutputs;
     bytes32 salt;
     bytes32 secret;
     bytes meta;
@@ -96,8 +76,8 @@ struct TakeOrderConfigV3 {
 struct OrderV3 {
     address owner;
     EvaluableV3 evaluable;
-    IOV2[] validInputs;
-    IOV2[] validOutputs;
+    IO[] validInputs;
+    IO[] validOutputs;
     bytes32 salt;
 }
 
