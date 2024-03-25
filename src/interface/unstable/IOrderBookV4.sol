@@ -329,20 +329,20 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// An order has been added to the orderbook. The order is permanently and
     /// always active according to its expression until/unless it is removed.
     /// @param sender `msg.sender` adding the order and is owner of the order.
-    /// @param order The newly added order. MUST be handed back as-is when
-    /// clearing orders and contains derived information in addition to the order
-    /// config that was provided by the order owner.
     /// @param orderHash The hash of the order as it is recorded onchain. Only
     /// the hash is stored in Orderbook storage to avoid paying gas to store the
     /// entire order.
-    event AddOrder(address sender, OrderV3 order, bytes32 orderHash);
+    /// @param order The newly added order. MUST be handed back as-is when
+    /// clearing orders and contains derived information in addition to the order
+    /// config that was provided by the order owner.
+    event AddOrderV2(address sender, bytes32 orderHash, OrderV3 order);
 
     /// An order has been removed from the orderbook. This effectively
     /// deactivates it. Orders can be added again after removal.
     /// @param sender `msg.sender` removing the order and is owner of the order.
-    /// @param order The removed order.
     /// @param orderHash The hash of the removed order.
-    event RemoveOrder(address sender, OrderV3 order, bytes32 orderHash);
+    /// @param order The removed order.
+    event RemoveOrderV2(address sender, bytes32 orderHash, OrderV3 order);
 
     /// Some order has been taken by `msg.sender`. This is the same as them
     /// placing inverse orders then immediately clearing them all, but costs less
