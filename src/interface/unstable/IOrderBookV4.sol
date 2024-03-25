@@ -9,32 +9,13 @@ import {
 } from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV3.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {ClearStateChange} from "../IOrderBookV3.sol";
+import {ClearStateChange, ClearConfig} from "../IOrderBookV3.sol";
 
 /// Thrown when take orders is called with no orders.
 error NoOrders();
 
 /// Thrown when take orders is called with a zero maximum input.
 error ZeroMaximumInput();
-
-/// Additional config to a `clear` that allows two orders to be fully matched to
-/// a specific token moment. Also defines the bounty for the clearer.
-/// @param aliceInputIOIndex The index of the input token in order A.
-/// @param aliceOutputIOIndex The index of the output token in order A.
-/// @param bobInputIOIndex The index of the input token in order B.
-/// @param bobOutputIOIndex The index of the output token in order B.
-/// @param aliceBountyVaultId The vault ID that the bounty from order A should
-/// move to for the clearer.
-/// @param bobBountyVaultId The vault ID that the bounty from order B should move
-/// to for the clearer.
-struct ClearConfigV2 {
-    uint256 aliceInputIOIndex;
-    uint256 aliceOutputIOIndex;
-    uint256 bobInputIOIndex;
-    uint256 bobOutputIOIndex;
-    bytes aliceBountyVaultId;
-    bytes bobBountyVaultId;
-}
 
 /// Configuration for a single input or output on an `Order`.
 /// @param token The token to either send from the owner as an output or receive
@@ -273,7 +254,6 @@ struct TakeOrdersConfigV3 {
 /// implement KYC/membership, tracking, distributions, stock, buybacks, etc. etc.
 ///
 /// Main differences between `IOrderBookV3` and `IOderBookV4`:
-/// - `vaultId` is now `bytes` instead of `uint256`.
 /// - Orders support and expect `eval3` direct evaluation from calldata.
 /// - Orders have preliminary support for confidential EVMs.
 /// - Added `eval` that allows the caller to evaluate expressions directly.
@@ -284,7 +264,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
     /// @param vaultId The vault ID the tokens are being deposited under.
-    error ZeroDepositAmount(address sender, address token, bytes vaultId);
+    error ZeroDepositAmount(address sender, address token, uint256 vaultId);
 
     /// MUST be thrown by `withdraw` if the amount _requested_ to withdraw is
     /// zero. The withdrawal MAY still not move any tokens if the vault balance
@@ -292,7 +272,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param sender `msg.sender` withdrawing tokens.
     /// @param token The token being withdrawn.
     /// @param vaultId The vault ID the tokens are being withdrawn from.
-    error ZeroWithdrawTargetAmount(address sender, address token, bytes vaultId);
+    error ZeroWithdrawTargetAmount(address sender, address token, uint256 vaultId);
 
     /// MUST be thrown by `addOrder` if the order has no associated calculation.
     error OrderNoSources();
@@ -312,7 +292,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param token The token being deposited.
     /// @param vaultId The vault ID the tokens are being deposited under.
     /// @param amount The amount of tokens deposited.
-    event Deposit(address sender, address token, bytes vaultId, uint256 amount);
+    event Deposit(address sender, address token, uint256 vaultId, uint256 amount);
 
     /// Some tokens have been withdrawn from a vault.
     /// @param sender `msg.sender` withdrawing tokens. Delegated withdrawals are
@@ -324,7 +304,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// target amount if the vault does not have the funds available to cover
     /// the target amount. For example an active order might move tokens before
     /// the withdraw completes.
-    event Withdraw(address sender, address token, bytes vaultId, uint256 targetAmount, uint256 amount);
+    event Withdraw(address sender, address token, uint256 vaultId, uint256 targetAmount, uint256 amount);
 
     /// An order has been added to the orderbook. The order is permanently and
     /// always active according to its expression until/unless it is removed.
@@ -385,7 +365,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param alice One of the orders.
     /// @param bob The other order.
     /// @param clearConfig Additional config required to process the clearance.
-    event Clear(address sender, OrderV3 alice, OrderV3 bob, ClearConfigV2 clearConfig);
+    event Clear(address sender, OrderV3 alice, OrderV3 bob, ClearConfig clearConfig);
 
     /// Emitted after two orders clear. Includes all final state changes in the
     /// vault balances, including the clearer's vaults.
@@ -398,10 +378,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param token The token the vault is for.
     /// @param vaultId The vault ID to read.
     /// @return balance The current balance of the vault.
-    function vaultBalance(address owner, address token, bytes calldata vaultId)
-        external
-        view
-        returns (uint256 balance);
+    function vaultBalance(address owner, address token, uint256 vaultId) external view returns (uint256 balance);
 
     /// `msg.sender` evaluates the provided expressions. This DOES NOT return
     /// any values, and MUST NOT modify any vault balances. Presumably the
@@ -440,7 +417,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param post Additional evaluables to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the deposit MUST be reverted.
-    function deposit(address token, bytes calldata vaultId, uint256 amount, EvaluableV3[] calldata post) external;
+    function deposit(address token, uint256 vaultId, uint256 amount, EvaluableV3[] calldata post) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -461,8 +438,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param post Additional evaluables to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the withdraw MUST be reverted.
-    function withdraw(address token, bytes calldata vaultId, uint256 targetAmount, EvaluableV3[] calldata post)
-        external;
+    function withdraw(address token, uint256 vaultId, uint256 targetAmount, EvaluableV3[] calldata post) external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
@@ -605,7 +581,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     function clear(
         OrderV3 memory alice,
         OrderV3 memory bob,
-        ClearConfigV2 calldata clearConfig,
+        ClearConfig calldata clearConfig,
         SignedContextV1[] memory aliceSignedContext,
         SignedContextV1[] memory bobSignedContext
     ) external;
