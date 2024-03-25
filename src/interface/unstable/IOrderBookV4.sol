@@ -6,7 +6,7 @@ import {
     EvaluableV3,
     IInterpreterCallerV3,
     SignedContextV1
-} from "rain.interpreter.interface/interface/unstable/IInterpreterCallerV3.sol";
+} from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV3.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
 import {ClearStateChange} from "../IOrderBookV3.sol";
@@ -461,7 +461,8 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param post Additional evaluables to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the withdraw MUST be reverted.
-    function withdraw(address token, bytes calldata vaultId, uint256 targetAmount, EvaluableV3[] calldata post) external;
+    function withdraw(address token, bytes calldata vaultId, uint256 targetAmount, EvaluableV3[] calldata post)
+        external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
@@ -495,7 +496,9 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// If ANY of the post evaluables revert, the order MUST NOT be added.
     /// @return stateChanged True if the order was added, false if it already
     /// existed.
-    function addOrder(OrderConfigV3 calldata config, EvaluableV3[] calldata post) external returns (bool stateChanged);
+    function addOrder(OrderConfigV3 calldata config, EvaluableV3[] calldata post)
+        external
+        returns (bool stateChanged);
 
     /// Order owner can remove their own orders. Delegated order removal is NOT
     /// supported and will revert. Removing an order multiple times or removing
