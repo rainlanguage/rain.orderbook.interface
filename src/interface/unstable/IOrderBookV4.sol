@@ -313,7 +313,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param config All config defining the orders to attempt to take.
     /// @param input The input amount from the perspective of sender.
     /// @param output The output amount from the perspective of sender.
-    event TakeOrder(address sender, TakeOrderConfigV3 config, uint256 input, uint256 output);
+    event TakeOrderV2(address sender, TakeOrderConfigV3 config, uint256 input, uint256 output);
 
     /// Emitted when attempting to match an order that either never existed or
     /// was removed. An event rather than an error so that we allow attempting
@@ -345,7 +345,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param alice One of the orders.
     /// @param bob The other order.
     /// @param clearConfig Additional config required to process the clearance.
-    event Clear(address sender, OrderV3 alice, OrderV3 bob, ClearConfig clearConfig);
+    event ClearV2(address sender, OrderV3 alice, OrderV3 bob, ClearConfig clearConfig);
 
     /// Emitted after two orders clear. Includes all final state changes in the
     /// vault balances, including the clearer's vaults.
@@ -397,7 +397,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param post Additional evaluables to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the deposit MUST be reverted.
-    function deposit(address token, uint256 vaultId, uint256 amount, EvaluableV3[] calldata post) external;
+    function deposit2(address token, uint256 vaultId, uint256 amount, EvaluableV3[] calldata post) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -418,7 +418,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param post Additional evaluables to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the withdraw MUST be reverted.
-    function withdraw(address token, uint256 vaultId, uint256 targetAmount, EvaluableV3[] calldata post) external;
+    function withdraw2(address token, uint256 vaultId, uint256 targetAmount, EvaluableV3[] calldata post) external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
@@ -452,7 +452,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// If ANY of the post evaluables revert, the order MUST NOT be added.
     /// @return stateChanged True if the order was added, false if it already
     /// existed.
-    function addOrder(OrderConfigV3 calldata config, EvaluableV3[] calldata post)
+    function addOrder2(OrderConfigV3 calldata config, EvaluableV3[] calldata post)
         external
         returns (bool stateChanged);
 
@@ -467,7 +467,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// If ANY of the post evaluables revert, the order MUST NOT be removed.
     /// @return stateChanged True if the order was removed, false if it did not
     /// exist.
-    function removeOrder(OrderV3 calldata order, EvaluableV3[] calldata post) external returns (bool stateChanged);
+    function removeOrder2(OrderV3 calldata order, EvaluableV3[] calldata post) external returns (bool stateChanged);
 
     /// Allows `msg.sender` to attempt to fill a list of orders in sequence
     /// without needing to place their own order and clear them. This works like
@@ -507,7 +507,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// vaults processed.
     /// @return totalOutput Total tokens taken from `msg.sender` and distributed
     /// between vaults.
-    function takeOrders(TakeOrdersConfigV3 calldata config)
+    function takeOrders2(TakeOrdersConfigV3 calldata config)
         external
         returns (uint256 totalInput, uint256 totalOutput);
 
@@ -558,7 +558,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// how to handle the bounty payment for the `msg.sender`.
     /// @param aliceSignedContext Optional signed context that is relevant to A.
     /// @param bobSignedContext Optional signed context that is relevant to B.
-    function clear(
+    function clear2(
         OrderV3 memory alice,
         OrderV3 memory bob,
         ClearConfig calldata clearConfig,
