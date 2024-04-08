@@ -5,7 +5,9 @@ import {IERC3156FlashLender} from "../ierc3156/IERC3156FlashLender.sol";
 import {
     EvaluableV3,
     IInterpreterCallerV3,
-    SignedContextV1
+    SignedContextV1,
+    IInterpreterV3,
+    IInterpreterStoreV2
 } from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV3.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
