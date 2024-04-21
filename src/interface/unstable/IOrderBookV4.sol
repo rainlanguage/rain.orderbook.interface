@@ -27,7 +27,7 @@ error ZeroMaximumInput();
 /// @param evaluable Standard `EvaluableV3` used to evaluate the order.
 /// @param validInputs As per `validInputs` on the `Order`.
 /// @param validOutputs As per `validOutputs` on the `Order`.
-/// @param salt As per `salt` on the `Order`.
+/// @param nonce As per `nonce` on the `Order`.
 /// @param secret Secret to use for cryptography related to the order. This is
 /// useless on public chains. MAY be useful in confidential chains, such as to
 /// encrypt event data that records the behaviour of the order.
@@ -38,7 +38,7 @@ struct OrderConfigV3 {
     EvaluableV3 evaluable;
     IO[] validInputs;
     IO[] validOutputs;
-    bytes32 salt;
+    bytes32 nonce;
     bytes32 secret;
     bytes meta;
 }
@@ -71,16 +71,16 @@ struct TakeOrderConfigV3 {
 /// @param validOutputs A list of output tokens that are economically equivalent
 /// for the purpose of processing this order. Outputs are relative to the order
 /// so these tokens will be sent from the owners vault.
-/// @param salt A unique value for the order that the owner can use to prevent
-/// the order hash being predictable. This is useless on public chains but
-/// useful in confidential chains where the order owner may want to prevent
-/// an attacker from brute forcing `orderExists`.
+/// @param nonce A unique value for the order that the owner can use to prevent
+/// the order hash being predictable or collide with existing orders. This MAY
+/// be useful to prevent `addOrder` noops for orders with identical logic, or
+/// to hide information on confidential chains.
 struct OrderV3 {
     address owner;
     EvaluableV3 evaluable;
     IO[] validInputs;
     IO[] validOutputs;
-    bytes32 salt;
+    bytes32 nonce;
 }
 
 /// Config for a list of orders to take sequentially as part of a `takeOrders`
