@@ -106,6 +106,15 @@ struct TakeOrdersConfigV3 {
     bytes data;
 }
 
+/// An action combines evaluable logic with additional context to be run by
+/// Orderbook. Actions are expected to be provided alongside a main action such
+/// as `deposit`, `withdraw`, `addOrder`, `removeOrder` etc. to allow the caller
+/// to run additional logic after the main action. This is useful for applying
+/// additional logic after the main action has completed, and could be used by
+/// governance wrappers, fee collectors, or other external systems that need to
+/// respond to the main action.
+/// @param evaluable The evaluable logic to run as part of the action.
+/// @param signedContext Additional context to be provided to the evaluable.
 struct ActionV1 {
     EvaluableV3 evaluable;
     SignedContextV1[] signedContext;
