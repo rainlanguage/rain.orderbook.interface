@@ -468,9 +468,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// If ANY of the post evaluables revert, the order MUST NOT be added.
     /// @return stateChanged True if the order was added, false if it already
     /// existed.
-    function addOrder2(OrderConfigV3 calldata config, ActionV1[] calldata post)
-        external
-        returns (bool stateChanged);
+    function addOrder2(OrderConfigV3 calldata config, ActionV1[] calldata post) external returns (bool stateChanged);
 
     /// Order owner can remove their own orders. Delegated order removal is NOT
     /// supported and will revert. Removing an order multiple times or removing
