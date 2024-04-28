@@ -106,7 +106,12 @@ struct TakeOrdersConfigV3 {
     bytes data;
 }
 
-/// @title IOrderBookV3
+struct ActionV1 {
+    EvaluableV3 evaluable;
+    SignedContextV1[] signedContext;
+}
+
+/// @title IOrderBookV4
 /// @notice An orderbook that deploys _strategies_ represented as interpreter
 /// expressions rather than individual orders. The order book contract itself
 /// behaves similarly to an `ERC4626` vault but with much more fine grained
@@ -362,12 +367,12 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @return balance The current balance of the vault.
     function vaultBalance(address owner, address token, uint256 vaultId) external view returns (uint256 balance);
 
-    /// `msg.sender` evaluates the provided expressions. This DOES NOT return
+    /// `msg.sender` enacts the provided actions. This DOES NOT return
     /// any values, and MUST NOT modify any vault balances. Presumably the
     /// expressions will modify some internal state associated with active
-    /// orders. If ANY of the expressions revert, the entire evaluation MUST
+    /// orders. If ANY of the expressions revert, the entire transaction MUST
     /// revert.
-    function eval(EvaluableV3[] calldata evals) external;
+    function enact(ActionV1[] calldata actions) external;
 
     /// `msg.sender` deposits tokens according to config. The config specifies
     /// the vault to deposit tokens under. Delegated depositing is NOT supported.
@@ -396,10 +401,10 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param token The token to deposit.
     /// @param vaultId The vault ID to deposit under.
     /// @param amount The amount of tokens to deposit.
-    /// @param post Additional evaluables to run after the deposit. Deposit
+    /// @param post Additional actions to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
-    /// If ANY of the post evaluables revert, the deposit MUST be reverted.
-    function deposit2(address token, uint256 vaultId, uint256 amount, EvaluableV3[] calldata post) external;
+    /// If ANY of the post actions revert, the deposit MUST be reverted.
+    function deposit2(address token, uint256 vaultId, uint256 amount, ActionV1[] calldata post) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -417,10 +422,10 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// result in fewer tokens withdrawn if the vault balance is lower than the
     /// target amount. MAY NOT be zero, the order book MUST revert with
     /// `ZeroWithdrawTargetAmount` if the amount is zero.
-    /// @param post Additional evaluables to run after the withdraw. Withdraw
+    /// @param post Additional actions to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the withdraw MUST be reverted.
-    function withdraw2(address token, uint256 vaultId, uint256 targetAmount, EvaluableV3[] calldata post) external;
+    function withdraw2(address token, uint256 vaultId, uint256 targetAmount, ActionV1[] calldata post) external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
@@ -449,12 +454,12 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// true.
     ///
     /// @param config All config required to build an `Order`.
-    /// @param post Additional evaluables to run after the order is added.
+    /// @param post Additional actions to run after the order is added.
     /// Order information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the order MUST NOT be added.
     /// @return stateChanged True if the order was added, false if it already
     /// existed.
-    function addOrder2(OrderConfigV3 calldata config, EvaluableV3[] calldata post)
+    function addOrder2(OrderConfigV3 calldata config, ActionV1[] calldata post)
         external
         returns (bool stateChanged);
 
@@ -464,12 +469,12 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// transaction will complete with that order hash definitely, redundantly
     /// not live.
     /// @param order The `Order` data exactly as it was added.
-    /// @param post Additional evaluables to run after the order is removed.
+    /// @param post Additional actions to run after the order is removed.
     /// Order information SHOULD be made available during evaluation in context.
     /// If ANY of the post evaluables revert, the order MUST NOT be removed.
     /// @return stateChanged True if the order was removed, false if it did not
     /// exist.
-    function removeOrder2(OrderV3 calldata order, EvaluableV3[] calldata post) external returns (bool stateChanged);
+    function removeOrder2(OrderV3 calldata order, ActionV1[] calldata post) external returns (bool stateChanged);
 
     /// Allows `msg.sender` to attempt to fill a list of orders in sequence
     /// without needing to place their own order and clear them. This works like
