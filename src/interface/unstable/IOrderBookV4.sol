@@ -120,6 +120,19 @@ struct ActionV1 {
     SignedContextV1[] signedContext;
 }
 
+/// Configuration for a quote request.
+/// @param order The order to quote.
+/// @param inputIOIndex The index of the input token in `order` to quote.
+/// @param outputIOIndex The index of the output token in `order` to quote.
+/// @param signedContext Optional additional signed context relevant to the
+/// quote.
+struct Quote {
+    OrderV3 order;
+    uint256 inputIOIndex;
+    uint256 outputIOIndex;
+    SignedContextV1[] signedContext;
+}
+
 /// @title IOrderBookV4
 /// @notice An orderbook that deploys _strategies_ represented as interpreter
 /// expressions rather than individual orders. The order book contract itself
@@ -440,6 +453,25 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param orderHash The hash of the order to check.
     /// @return exists True if the order exists, false otherwise.
     function orderExists(bytes32 orderHash) external view returns (bool exists);
+
+    /// Quotes the provided order for the caller.
+    /// The caller is considered to be the counterparty to the order, for the
+    /// purposes of evaluating the quote. However, the caller's vault balances
+    /// and/or tokens in wallet are not considered in the quote. This means the
+    /// output max can exceed what the caller could actually pay for.
+    /// Both the output max and io ratio are returned as 18 decimal fixed point
+    /// values, ignoring any token decimals, so are not the literal amounts that
+    /// would be moved in the order were it to clear.
+    /// @param quoteConfig The configuration for the quote.
+    /// @return exists True if the order exists, false otherwise.
+    /// @return outputMax The maximum output amount that the order could send.
+    /// Is `0` if the order does not exist.
+    /// @return ioRatio The input:output ratio of the order. Is `0` if the order
+    /// does not exist.
+    function quote(Quote calldata quoteConfig)
+        external
+        view
+        returns (bool exists, uint256 outputMax, uint256 ioRatio);
 
     /// Given an order config, deploys the expression and builds the full `Order`
     /// for the config, then records it as an active order. Delegated adding an
