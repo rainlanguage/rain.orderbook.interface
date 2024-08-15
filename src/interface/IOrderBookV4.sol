@@ -106,16 +106,15 @@ struct TakeOrdersConfigV3 {
     bytes data;
 }
 
-/// An action combines evaluable logic with additional context to be run by
-/// Orderbook. Actions are expected to be provided alongside a main action such
-/// as `deposit`, `withdraw`, `addOrder`, `removeOrder` etc. to allow the caller
-/// to run additional logic after the main action. This is useful for applying
-/// additional logic after the main action has completed, and could be used by
-/// governance wrappers, fee collectors, or other external systems that need to
-/// respond to the main action.
-/// @param evaluable The evaluable logic to run as part of the action.
+/// A task combines evaluable logic with additional context to be run by
+/// Orderbook. Tasks are expected to be provided to a primary call such as
+/// `deposit`, `withdraw`, `addOrder`, `removeOrder` etc. to allow the caller
+/// to run additional logic afterwards. This is useful for governance wrappers,
+/// fee collectors, or other external systems that need to respond to the
+/// primary call.
+/// @param evaluable The evaluable logic to run as part of the task.
 /// @param signedContext Additional context to be provided to the evaluable.
-struct ActionV1 {
+struct TaskV1 {
     EvaluableV3 evaluable;
     SignedContextV1[] signedContext;
 }
@@ -389,12 +388,12 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @return balance The current balance of the vault.
     function vaultBalance(address owner, address token, uint256 vaultId) external view returns (uint256 balance);
 
-    /// `msg.sender` enacts the provided actions. This DOES NOT return
+    /// `msg.sender` entasks the provided tasks. This DOES NOT return
     /// any values, and MUST NOT modify any vault balances. Presumably the
     /// expressions will modify some internal state associated with active
     /// orders. If ANY of the expressions revert, the entire transaction MUST
     /// revert.
-    function enact(ActionV1[] calldata actions) external;
+    function entask(TaskV1[] calldata tasks) external;
 
     /// `msg.sender` deposits tokens according to config. The config specifies
     /// the vault to deposit tokens under. Delegated depositing is NOT supported.
@@ -423,10 +422,10 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// @param token The token to deposit.
     /// @param vaultId The vault ID to deposit under.
     /// @param amount The amount of tokens to deposit.
-    /// @param post Additional actions to run after the deposit. Deposit
+    /// @param tasks Additional tasks to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
-    /// If ANY of the post actions revert, the deposit MUST be reverted.
-    function deposit2(address token, uint256 vaultId, uint256 amount, ActionV1[] calldata post) external;
+    /// If ANY of the post tasks revert, the deposit MUST be reverted.
+    function deposit2(address token, uint256 vaultId, uint256 amount, TaskV1[] calldata tasks) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -444,10 +443,10 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// result in fewer tokens withdrawn if the vault balance is lower than the
     /// target amount. MAY NOT be zero, the order book MUST revert with
     /// `ZeroWithdrawTargetAmount` if the amount is zero.
-    /// @param post Additional actions to run after the withdraw. Withdraw
+    /// @param tasks Additional tasks to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
-    /// If ANY of the post evaluables revert, the withdraw MUST be reverted.
-    function withdraw2(address token, uint256 vaultId, uint256 targetAmount, ActionV1[] calldata post) external;
+    /// If ANY of the tasks revert, the withdraw MUST be reverted.
+    function withdraw2(address token, uint256 vaultId, uint256 targetAmount, TaskV1[] calldata tasks) external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
@@ -495,12 +494,12 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// true.
     ///
     /// @param config All config required to build an `Order`.
-    /// @param post Additional actions to run after the order is added.
+    /// @param tasks Additional tasks to run after the order is added.
     /// Order information SHOULD be made available during evaluation in context.
-    /// If ANY of the post evaluables revert, the order MUST NOT be added.
+    /// If ANY of the tasks revert, the order MUST NOT be added.
     /// @return stateChanged True if the order was added, false if it already
     /// existed.
-    function addOrder2(OrderConfigV3 calldata config, ActionV1[] calldata post) external returns (bool stateChanged);
+    function addOrder2(OrderConfigV3 calldata config, TaskV1[] calldata tasks) external returns (bool stateChanged);
 
     /// Order owner can remove their own orders. Delegated order removal is NOT
     /// supported and will revert. Removing an order multiple times or removing
@@ -508,12 +507,12 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// transaction will complete with that order hash definitely, redundantly
     /// not live.
     /// @param order The `Order` data exactly as it was added.
-    /// @param post Additional actions to run after the order is removed.
+    /// @param tasks Additional tasks to run after the order is removed.
     /// Order information SHOULD be made available during evaluation in context.
-    /// If ANY of the post evaluables revert, the order MUST NOT be removed.
+    /// If ANY of the tasks revert, the order MUST NOT be removed.
     /// @return stateChanged True if the order was removed, false if it did not
     /// exist.
-    function removeOrder2(OrderV3 calldata order, ActionV1[] calldata post) external returns (bool stateChanged);
+    function removeOrder2(OrderV3 calldata order, TaskV1[] calldata tasks) external returns (bool stateChanged);
 
     /// Allows `msg.sender` to attempt to fill a list of orders in sequence
     /// without needing to place their own order and clear them. This works like
