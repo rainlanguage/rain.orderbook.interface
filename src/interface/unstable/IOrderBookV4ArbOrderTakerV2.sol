@@ -10,6 +10,6 @@ interface IOrderBookV4ArbOrderTakerV2 is IOrderBookV4OrderTaker {
         IOrderBookV4 orderBook,
         TakeOrdersConfigV3 calldata takeOrders,
         uint256 minimumSenderOutput,
-        TaskV1[] calldata tasks
+        TaskV1 calldata task
     ) external payable;
 }
