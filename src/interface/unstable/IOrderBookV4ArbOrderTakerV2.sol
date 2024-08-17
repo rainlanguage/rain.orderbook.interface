@@ -9,7 +9,6 @@ interface IOrderBookV4ArbOrderTakerV2 is IOrderBookV4OrderTaker {
     function arb3(
         IOrderBookV4 orderBook,
         TakeOrdersConfigV3 calldata takeOrders,
-        uint256 minimumSenderOutput,
         TaskV1 calldata task
     ) external payable;
 }
