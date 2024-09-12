@@ -3,12 +3,12 @@ pragma solidity ^0.8.18;
 
 import {IERC3156FlashLender} from "../ierc3156/IERC3156FlashLender.sol";
 import {
-    EvaluableV3,
-    IInterpreterCallerV3,
+    EvaluableV4,
+    IInterpreterCallerV4,
     SignedContextV1,
-    IInterpreterV3,
+    IInterpreterV4,
     IInterpreterStoreV2
-} from "../../../lib/rain.interpreter.interface/src/interface/IInterpreterCallerV3.sol";
+} from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV4.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
 import {ClearStateChange, ClearConfig, NoOrders, ZeroMaximumInput, TaskV1} from "../IOrderBookV4.sol";
@@ -30,7 +30,7 @@ struct IOV2 {
 /// the expression deployer that they specify. However they MAY specify a
 /// deployer with a corrupt integrity check, so counterparties and clearers MUST
 /// check the DISpair of the order and avoid untrusted pairings.
-/// @param evaluable Standard `EvaluableV3` used to evaluate the order.
+/// @param evaluable Standard `EvaluableV4` used to evaluate the order.
 /// @param validInputs As per `validInputs` on the `Order`.
 /// @param validOutputs As per `validOutputs` on the `Order`.
 /// @param nonce As per `nonce` on the `Order`.
@@ -41,7 +41,7 @@ struct IOV2 {
 /// but MUST be emitted as a Rain `MetaV1` when the order is placed so can be
 /// used by offchain processes.
 struct OrderConfigV4 {
-    EvaluableV3 evaluable;
+    EvaluableV4 evaluable;
     IOV2[] validInputs;
     IOV2[] validOutputs;
     bytes32 nonce;
@@ -52,9 +52,9 @@ struct OrderConfigV4 {
 /// Defines a fully deployed order ready to evaluate by Orderbook. Identical to
 /// `Order` except for the newer `EvaluableV2`.
 /// @param owner The owner of the order is the `msg.sender` that added the order.
-/// @param evaluable Standard `EvaluableV2` with entrypoints for both
+/// @param evaluable Standard `EvaluableV4` with entrypoints for both
 /// "calculate order" and "handle IO". The latter MAY be empty bytes, in which
-/// case it will be skipped at runtime to save gas.
+/// case it SHOULD be skipped at runtime to save gas.
 /// @param validInputs A list of input tokens that are economically equivalent
 /// for the purpose of processing this order. Inputs are relative to the order
 /// so these tokens will be sent to the owners vault.
@@ -67,7 +67,7 @@ struct OrderConfigV4 {
 /// to hide information on confidential chains.
 struct OrderV4 {
     address owner;
-    EvaluableV3 evaluable;
+    EvaluableV4 evaluable;
     IOV2[] validInputs;
     IOV2[] validOutputs;
     bytes32 nonce;
@@ -247,7 +247,7 @@ struct QuoteV2 {
 ///
 /// Main differences between `IOrderBookV4` and `IOderBookV5`:
 /// - Calcuations and vault balances are rain floating point values.
-interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
+interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// MUST be thrown by `deposit` if the amount is zero.
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
