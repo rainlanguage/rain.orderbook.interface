@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.18;
 
+import {PackedFloat} from "rain.math.float/lib/LibDecimalFloat.sol";
+
 interface IOrderBookV5OrderTaker {
     /// @notice Called by `IOrderBookV5` when `takeOrders` is called with
     /// non-zero data, if it caused a non-zero input amount. I.e. if the order(s)
@@ -23,8 +25,8 @@ interface IOrderBookV5OrderTaker {
     function onTakeOrders2(
         address inputToken,
         address outputToken,
-        bytes32 inputAmountSent,
-        bytes32 totalOutputAmount,
+        PackedFloat inputAmountSent,
+        PackedFloat totalOutputAmount,
         bytes calldata takeOrdersData
     ) external;
 }

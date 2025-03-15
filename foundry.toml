@@ -21,5 +21,9 @@ optimizer_runs = 1000000
 bytecode_hash = "none"
 cbor_metadata = false
 
+remappings = [
+  "rain.math.float/=lib/rain.interpreter.interface/lib/rain.math.float/src/"
+]
+
 [fuzz]
 runs = 2048
