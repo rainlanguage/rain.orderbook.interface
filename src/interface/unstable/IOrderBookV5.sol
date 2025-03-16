@@ -4,15 +4,29 @@ pragma solidity ^0.8.18;
 
 import {IERC3156FlashLender} from "../ierc3156/IERC3156FlashLender.sol";
 import {
-    EvaluableV3,
-    IInterpreterCallerV3,
+    EvaluableV4,
+    IInterpreterCallerV4,
     SignedContextV1,
-    IInterpreterV3,
-    IInterpreterStoreV2
-} from "../../../lib/rain.interpreter.interface/src/interface/IInterpreterCallerV3.sol";
+    IInterpreterV4,
+    IInterpreterStoreV3
+} from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV4.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {ClearStateChange, ClearConfig, NoOrders, ZeroMaximumInput, TaskV1} from "../IOrderBookV4.sol";
+import {ClearStateChange, ClearConfig, NoOrders, ZeroMaximumInput} from "../IOrderBookV4.sol";
+import {PackedFloat} from "rain.math.float/lib/LibDecimalFloat.sol";
+
+/// A task combines evaluable logic with additional context to be run by
+/// Orderbook. Tasks are expected to be provided to a primary call such as
+/// `deposit`, `withdraw`, `addOrder`, `removeOrder` etc. to allow the caller
+/// to run additional logic afterwards. This is useful for governance wrappers,
+/// fee collectors, or other external systems that need to respond to the
+/// primary call.
+/// @param evaluable The evaluable logic to run as part of the task.
+/// @param signedContext Additional context to be provided to the evaluable.
+struct TaskV2 {
+    EvaluableV4 evaluable;
+    SignedContextV1[] signedContext;
+}
 
 /// Configuration for a single input or output on an `Order`.
 /// @param token The token to either send from the owner as an output or receive
@@ -42,7 +56,7 @@ struct IOV2 {
 /// but MUST be emitted as a Rain `MetaV1` when the order is placed so can be
 /// used by offchain processes.
 struct OrderConfigV4 {
-    EvaluableV3 evaluable;
+    EvaluableV4 evaluable;
     IOV2[] validInputs;
     IOV2[] validOutputs;
     bytes32 nonce;
@@ -68,7 +82,7 @@ struct OrderConfigV4 {
 /// to hide information on confidential chains.
 struct OrderV4 {
     address owner;
-    EvaluableV3 evaluable;
+    EvaluableV4 evaluable;
     IOV2[] validInputs;
     IOV2[] validOutputs;
     bytes32 nonce;
@@ -106,9 +120,9 @@ struct TakeOrderConfigV4 {
 /// onchain actions between receiving their input tokens, before having to send
 /// their output tokens.
 struct TakeOrdersConfigV4 {
-    uint256 minimumInput;
-    uint256 maximumInput;
-    uint256 maximumIORatio;
+    PackedFloat minimumInput;
+    PackedFloat maximumInput;
+    PackedFloat maximumIORatio;
     TakeOrderConfigV4[] orders;
     bytes data;
 }
@@ -248,7 +262,7 @@ struct QuoteV2 {
 ///
 /// Main differences between `IOrderBookV4` and `IOderBookV5`:
 /// - Calcuations and vault balances are rain floating point values.
-interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
+interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// MUST be thrown by `deposit` if the amount is zero.
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
@@ -288,12 +302,14 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// NOT supported.
     /// @param token The token being withdrawn.
     /// @param vaultId The vault ID the tokens are being withdrawn from.
-    /// @param targetAmount The amount of tokens requested to withdraw.
-    /// @param amount The amount of tokens withdrawn, can be less than the
-    /// target amount if the vault does not have the funds available to cover
-    /// the target amount. For example an active order might move tokens before
-    /// the withdraw completes.
-    event Withdraw(address sender, address token, uint256 vaultId, uint256 targetAmount, uint256 amount);
+    /// @param targetAmountPacked The amount of tokens requested to withdraw.
+    /// @param withdrawAmountPacked The amount of tokens withdrawn, can be less
+    /// than the target amount if the vault does not have the funds available to
+    /// cover the target amount. For example an active order might move tokens
+    /// before the withdraw completes.
+    /// @param withdrawAmount The amount of tokens withdrawn, as the uint256 of
+    /// tokens that actually move onchain.
+    event WithdrawV2(address sender, address token, uint256 vaultId, PackedFloat targetAmountPacked, PackedFloat withdrawAmountPacked, uint256 withdrawAmount);
 
     /// An order has been added to the orderbook. The order is permanently and
     /// always active according to its expression until/unless it is removed.
@@ -374,7 +390,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// expressions will modify some internal state associated with active
     /// orders. If ANY of the expressions revert, the entire transaction MUST
     /// revert.
-    function entask(TaskV1[] calldata tasks) external;
+    function entask2(TaskV2[] calldata tasks) external;
 
     /// `msg.sender` deposits tokens according to config. The config specifies
     /// the vault to deposit tokens under. Delegated depositing is NOT supported.
@@ -402,11 +418,11 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     ///
     /// @param token The token to deposit.
     /// @param vaultId The vault ID to deposit under.
-    /// @param amount The amount of tokens to deposit.
+    /// @param depositAmountPacked The amount of tokens to deposit.
     /// @param tasks Additional tasks to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post tasks revert, the deposit MUST be reverted.
-    function deposit2(address token, uint256 vaultId, uint256 amount, TaskV1[] calldata tasks) external;
+    function deposit3(address token, uint256 vaultId, PackedFloat depositAmountPacked, TaskV2[] calldata tasks) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -420,14 +436,14 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     ///
     /// @param token The token to withdraw.
     /// @param vaultId The vault ID to withdraw from.
-    /// @param targetAmount The amount of tokens to attempt to withdraw. MAY
+    /// @param targetAmountPacked The amount of tokens to attempt to withdraw. MAY
     /// result in fewer tokens withdrawn if the vault balance is lower than the
     /// target amount. MAY NOT be zero, the order book MUST revert with
     /// `ZeroWithdrawTargetAmount` if the amount is zero.
     /// @param tasks Additional tasks to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the tasks revert, the withdraw MUST be reverted.
-    function withdraw2(address token, uint256 vaultId, uint256 targetAmount, TaskV1[] calldata tasks) external;
+    function withdraw2(address token, uint256 vaultId, PackedFloat targetAmountPacked, TaskV2[] calldata tasks) external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
@@ -480,7 +496,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// If ANY of the tasks revert, the order MUST NOT be added.
     /// @return stateChanged True if the order was added, false if it already
     /// existed.
-    function addOrder3(OrderConfigV4 calldata config, TaskV1[] calldata tasks) external returns (bool stateChanged);
+    function addOrder3(OrderConfigV4 calldata config, TaskV2[] calldata tasks) external returns (bool stateChanged);
 
     /// Order owner can remove their own orders. Delegated order removal is NOT
     /// supported and will revert. Removing an order multiple times or removing
@@ -493,7 +509,7 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// If ANY of the tasks revert, the order MUST NOT be removed.
     /// @return stateChanged True if the order was removed, false if it did not
     /// exist.
-    function removeOrder3(OrderV4 calldata order, TaskV1[] calldata tasks) external returns (bool stateChanged);
+    function removeOrder3(OrderV4 calldata order, TaskV2[] calldata tasks) external returns (bool stateChanged);
 
     /// Allows `msg.sender` to attempt to fill a list of orders in sequence
     /// without needing to place their own order and clear them. This works like
@@ -529,13 +545,13 @@ interface IOrderBookV4 is IERC3156FlashLender, IInterpreterCallerV3 {
     /// provided. Inputs and outputs are from the perspective of `msg.sender`
     /// except for values specified by the orders themselves which are the from
     /// the perspective of that order.
-    /// @return totalInput Total tokens sent to `msg.sender`, taken from order
+    /// @return totalTakerInput Total tokens sent to `msg.sender`, taken from order
     /// vaults processed.
-    /// @return totalOutput Total tokens taken from `msg.sender` and distributed
+    /// @return totalTakerOutput Total tokens taken from `msg.sender` and distributed
     /// between vaults.
     function takeOrders3(TakeOrdersConfigV4 calldata config)
         external
-        returns (uint256 totalInput, uint256 totalOutput);
+        returns (PackedFloat totalTakerInput, PackedFloat totalTakerOutput);
 
     /// Allows `msg.sender` to match two live orders placed earlier by
     /// non-interactive parties and claim a bounty in the process. The clearer is
