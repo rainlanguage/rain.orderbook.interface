@@ -383,7 +383,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param token The token the vault is for.
     /// @param vaultId The vault ID to read.
     /// @return balance The current balance of the vault.
-    function vaultBalance(address owner, address token, uint256 vaultId) external view returns (uint256 balance);
+    function vaultBalance2(address owner, address token, uint256 vaultId) external view returns (PackedFloat balance);
 
     /// `msg.sender` entasks the provided tasks. This DOES NOT return
     /// any values, and MUST NOT modify any vault balances. Presumably the
