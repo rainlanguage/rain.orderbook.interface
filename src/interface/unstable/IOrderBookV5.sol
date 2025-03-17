@@ -309,7 +309,14 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// before the withdraw completes.
     /// @param withdrawAmount The amount of tokens withdrawn, as the uint256 of
     /// tokens that actually move onchain.
-    event WithdrawV2(address sender, address token, uint256 vaultId, PackedFloat targetAmountPacked, PackedFloat withdrawAmountPacked, uint256 withdrawAmount);
+    event WithdrawV2(
+        address sender,
+        address token,
+        uint256 vaultId,
+        PackedFloat targetAmountPacked,
+        PackedFloat withdrawAmountPacked,
+        uint256 withdrawAmount
+    );
 
     /// An order has been added to the orderbook. The order is permanently and
     /// always active according to its expression until/unless it is removed.
@@ -422,7 +429,8 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param tasks Additional tasks to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post tasks revert, the deposit MUST be reverted.
-    function deposit3(address token, uint256 vaultId, PackedFloat depositAmountPacked, TaskV2[] calldata tasks) external;
+    function deposit3(address token, uint256 vaultId, PackedFloat depositAmountPacked, TaskV2[] calldata tasks)
+        external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -443,7 +451,8 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param tasks Additional tasks to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the tasks revert, the withdraw MUST be reverted.
-    function withdraw2(address token, uint256 vaultId, PackedFloat targetAmountPacked, TaskV2[] calldata tasks) external;
+    function withdraw2(address token, uint256 vaultId, PackedFloat targetAmountPacked, TaskV2[] calldata tasks)
+        external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
