@@ -12,8 +12,50 @@ import {
 } from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV4.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {ClearStateChange, ClearConfig, NoOrders, ZeroMaximumInput} from "../IOrderBookV4.sol";
-import {PackedFloat} from "rain.math.float/lib/LibDecimalFloat.sol";
+import {NoOrders, ZeroMaximumInput} from "../IOrderBookV4.sol";
+
+/// Summary of the vault state changes due to clearing an order. NOT the state
+/// changes sent to the interpreter store, these are the LOCAL CHANGES in vault
+/// balances. Note that the difference in inputs/outputs overall between the
+/// counterparties is the bounty paid to the entity that cleared the order.
+/// @param aliceOutput Amount of counterparty A's output token that moved out of
+/// their vault.
+/// @param bobOutput Amount of counterparty B's output token that moved out of
+/// their vault.
+/// @param aliceInput Amount of counterparty A's input token that moved into
+/// their vault.
+/// @param bobInput Amount of counterparty B's input token that moved into their
+/// vault.
+struct ClearStateChangeV2 {
+    Float aliceOutput;
+    Float bobOutput;
+    Float aliceInput;
+    Float bobInput;
+}
+
+/// Additional config to a `clear` that allows two orders to be fully matched to
+/// a specific token moment. Also defines the bounty for the clearer.
+/// @param aliceInputIOIndex The index of the input token in order A.
+/// @param aliceOutputIOIndex The index of the output token in order A.
+/// @param bobInputIOIndex The index of the input token in order B.
+/// @param bobOutputIOIndex The index of the output token in order B.
+/// @param aliceBountyVaultId The vault ID that the bounty from order A should
+/// move to for the clearer.
+/// @param bobBountyVaultId The vault ID that the bounty from order B should move
+/// to for the clearer.
+struct ClearConfigV2 {
+    uint256 aliceInputIOIndex;
+    uint256 aliceOutputIOIndex;
+    uint256 bobInputIOIndex;
+    uint256 bobOutputIOIndex;
+    bytes32 aliceBountyVaultId;
+    bytes32 bobBountyVaultId;
+}
+
+struct Float {
+    int256 signedCoefficient;
+    int256 exponent;
+}
 
 /// A task combines evaluable logic with additional context to be run by
 /// Orderbook. Tasks are expected to be provided to a primary call such as
@@ -37,7 +79,7 @@ struct TaskV2 {
 /// or move out from if this is an output.
 struct IOV2 {
     address token;
-    uint256 vaultId;
+    bytes32 vaultId;
 }
 
 /// Config the order owner may provide to define their order. The `msg.sender`
@@ -120,9 +162,9 @@ struct TakeOrderConfigV4 {
 /// onchain actions between receiving their input tokens, before having to send
 /// their output tokens.
 struct TakeOrdersConfigV4 {
-    PackedFloat minimumInput;
-    PackedFloat maximumInput;
-    PackedFloat maximumIORatio;
+    Float minimumInput;
+    Float maximumInput;
+    Float maximumIORatio;
     TakeOrderConfigV4[] orders;
     bytes data;
 }
@@ -267,7 +309,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
     /// @param vaultId The vault ID the tokens are being deposited under.
-    error ZeroDepositAmount(address sender, address token, uint256 vaultId);
+    error ZeroDepositAmount(address sender, address token, bytes32 vaultId);
 
     /// MUST be thrown by `withdraw` if the amount _requested_ to withdraw is
     /// zero. The withdrawal MAY still not move any tokens if the vault balance
@@ -275,7 +317,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param sender `msg.sender` withdrawing tokens.
     /// @param token The token being withdrawn.
     /// @param vaultId The vault ID the tokens are being withdrawn from.
-    error ZeroWithdrawTargetAmount(address sender, address token, uint256 vaultId);
+    error ZeroWithdrawTargetAmount(address sender, address token, bytes32 vaultId);
 
     /// MUST be thrown by `addOrder` if the order has no associated calculation.
     error OrderNoSources();
@@ -294,28 +336,28 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// supported.
     /// @param token The token being deposited.
     /// @param vaultId The vault ID the tokens are being deposited under.
-    /// @param amount The amount of tokens deposited.
-    event Deposit(address sender, address token, uint256 vaultId, uint256 amount);
+    /// @param depositAmountUint256 The amount of tokens deposited.
+    event DepositV2(address sender, address token, bytes32 vaultId, uint256 depositAmountUint256);
 
     /// Some tokens have been withdrawn from a vault.
     /// @param sender `msg.sender` withdrawing tokens. Delegated withdrawals are
     /// NOT supported.
     /// @param token The token being withdrawn.
     /// @param vaultId The vault ID the tokens are being withdrawn from.
-    /// @param targetAmountPacked The amount of tokens requested to withdraw.
-    /// @param withdrawAmountPacked The amount of tokens withdrawn, can be less
+    /// @param targetAmount The amount of tokens requested to withdraw.
+    /// @param withdrawAmount The amount of tokens withdrawn, can be less
     /// than the target amount if the vault does not have the funds available to
     /// cover the target amount. For example an active order might move tokens
     /// before the withdraw completes.
-    /// @param withdrawAmount The amount of tokens withdrawn, as the uint256 of
-    /// tokens that actually move onchain.
+    /// @param withdrawAmountUint256 The amount of tokens withdrawn, as the
+    /// uint256 of tokens that actually move onchain.
     event WithdrawV2(
         address sender,
         address token,
-        uint256 vaultId,
-        PackedFloat targetAmountPacked,
-        PackedFloat withdrawAmountPacked,
-        uint256 withdrawAmount
+        bytes32 vaultId,
+        Float targetAmount,
+        Float withdrawAmount,
+        uint256 withdrawAmountUint256
     );
 
     /// An order has been added to the orderbook. The order is permanently and
@@ -345,7 +387,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param config All config defining the orders to attempt to take.
     /// @param input The input amount from the perspective of sender.
     /// @param output The output amount from the perspective of sender.
-    event TakeOrderV3(address sender, TakeOrderConfigV4 config, uint256 input, uint256 output);
+    event TakeOrderV3(address sender, TakeOrderConfigV4 config, Float input, Float output);
 
     /// Emitted when attempting to match an order that either never existed or
     /// was removed. An event rather than an error so that we allow attempting
@@ -377,20 +419,20 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param alice One of the orders.
     /// @param bob The other order.
     /// @param clearConfig Additional config required to process the clearance.
-    event ClearV3(address sender, OrderV4 alice, OrderV4 bob, ClearConfig clearConfig);
+    event ClearV3(address sender, OrderV4 alice, OrderV4 bob, ClearConfigV2 clearConfig);
 
     /// Emitted after two orders clear. Includes all final state changes in the
     /// vault balances, including the clearer's vaults.
     /// @param sender `msg.sender` clearing the order.
     /// @param clearStateChange The final vault state changes from the clearance.
-    event AfterClear(address sender, ClearStateChange clearStateChange);
+    event AfterClearV2(address sender, ClearStateChangeV2 clearStateChange);
 
     /// Get the current balance of a vault for a given owner, token and vault ID.
     /// @param owner The owner of the vault.
     /// @param token The token the vault is for.
     /// @param vaultId The vault ID to read.
     /// @return balance The current balance of the vault.
-    function vaultBalance2(address owner, address token, uint256 vaultId) external view returns (PackedFloat balance);
+    function vaultBalance2(address owner, address token, bytes32 vaultId) external view returns (Float calldata balance);
 
     /// `msg.sender` entasks the provided tasks. This DOES NOT return
     /// any values, and MUST NOT modify any vault balances. Presumably the
@@ -425,11 +467,11 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     ///
     /// @param token The token to deposit.
     /// @param vaultId The vault ID to deposit under.
-    /// @param depositAmountPacked The amount of tokens to deposit.
+    /// @param depositAmount The amount of tokens to deposit.
     /// @param tasks Additional tasks to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post tasks revert, the deposit MUST be reverted.
-    function deposit3(address token, uint256 vaultId, PackedFloat depositAmountPacked, TaskV2[] calldata tasks)
+    function deposit3(address token, bytes32 vaultId, Float calldata depositAmount, TaskV2[] calldata tasks)
         external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
@@ -444,14 +486,14 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     ///
     /// @param token The token to withdraw.
     /// @param vaultId The vault ID to withdraw from.
-    /// @param targetAmountPacked The amount of tokens to attempt to withdraw. MAY
+    /// @param targetAmount The amount of tokens to attempt to withdraw. MAY
     /// result in fewer tokens withdrawn if the vault balance is lower than the
     /// target amount. MAY NOT be zero, the order book MUST revert with
     /// `ZeroWithdrawTargetAmount` if the amount is zero.
     /// @param tasks Additional tasks to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the tasks revert, the withdraw MUST be reverted.
-    function withdraw2(address token, uint256 vaultId, PackedFloat targetAmountPacked, TaskV2[] calldata tasks)
+    function withdraw2(address token, bytes32 vaultId, Float calldata targetAmount, TaskV2[] calldata tasks)
         external;
 
     /// Returns true if the order exists, false otherwise.
@@ -476,7 +518,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     function quote2(QuoteV2 calldata quoteConfig)
         external
         view
-        returns (bool exists, uint256 outputMax, uint256 ioRatio);
+        returns (bool exists, Float calldata outputMax, Float calldata ioRatio);
 
     /// Given an order config, deploys the expression and builds the full `Order`
     /// for the config, then records it as an active order. Delegated adding an
@@ -560,7 +602,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// between vaults.
     function takeOrders3(TakeOrdersConfigV4 calldata config)
         external
-        returns (PackedFloat totalTakerInput, PackedFloat totalTakerOutput);
+        returns (Float calldata totalTakerInput, Float calldata totalTakerOutput);
 
     /// Allows `msg.sender` to match two live orders placed earlier by
     /// non-interactive parties and claim a bounty in the process. The clearer is
@@ -612,7 +654,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     function clear3(
         OrderV4 memory alice,
         OrderV4 memory bob,
-        ClearConfig calldata clearConfig,
+        ClearConfigV2 calldata clearConfig,
         SignedContextV1[] memory aliceSignedContext,
         SignedContextV1[] memory bobSignedContext
     ) external;
