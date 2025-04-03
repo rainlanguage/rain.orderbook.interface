@@ -14,6 +14,8 @@ import {
 /// Import unmodified structures from older versions of `IOrderBook`.
 import {NoOrders, ZeroMaximumInput} from "../IOrderBookV4.sol";
 
+import {Float} from "rain.math.float/lib/LibDecimalFloat.sol";
+
 /// Summary of the vault state changes due to clearing an order. NOT the state
 /// changes sent to the interpreter store, these are the LOCAL CHANGES in vault
 /// balances. Note that the difference in inputs/outputs overall between the
@@ -50,11 +52,6 @@ struct ClearConfigV2 {
     uint256 bobOutputIOIndex;
     bytes32 aliceBountyVaultId;
     bytes32 bobBountyVaultId;
-}
-
-struct Float {
-    int256 signedCoefficient;
-    int256 exponent;
 }
 
 /// A task combines evaluable logic with additional context to be run by
