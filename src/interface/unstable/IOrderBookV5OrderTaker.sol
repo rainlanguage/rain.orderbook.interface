@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.18;
 
-import {PackedFloat} from "rain.math.float/lib/LibDecimalFloat.sol";
+import {Float} from "./IOrderBookV5.sol";
 
 interface IOrderBookV5OrderTaker {
     /// @notice Called by `IOrderBookV5` when `takeOrders` is called with
@@ -25,8 +25,8 @@ interface IOrderBookV5OrderTaker {
     function onTakeOrders2(
         address inputToken,
         address outputToken,
-        PackedFloat inputAmountSent,
-        PackedFloat totalOutputAmount,
+        Float calldata inputAmountSent,
+        Float calldata totalOutputAmount,
         bytes calldata takeOrdersData
     ) external;
 }
