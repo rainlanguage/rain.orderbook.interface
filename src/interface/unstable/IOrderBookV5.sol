@@ -429,7 +429,10 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param token The token the vault is for.
     /// @param vaultId The vault ID to read.
     /// @return balance The current balance of the vault.
-    function vaultBalance2(address owner, address token, bytes32 vaultId) external view returns (Float calldata balance);
+    function vaultBalance2(address owner, address token, bytes32 vaultId)
+        external
+        view
+        returns (Float calldata balance);
 
     /// `msg.sender` entasks the provided tasks. This DOES NOT return
     /// any values, and MUST NOT modify any vault balances. Presumably the
@@ -468,8 +471,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param tasks Additional tasks to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post tasks revert, the deposit MUST be reverted.
-    function deposit3(address token, bytes32 vaultId, Float calldata depositAmount, TaskV2[] calldata tasks)
-        external;
+    function deposit3(address token, bytes32 vaultId, Float calldata depositAmount, TaskV2[] calldata tasks) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
@@ -490,8 +492,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param tasks Additional tasks to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the tasks revert, the withdraw MUST be reverted.
-    function withdraw3(address token, bytes32 vaultId, Float calldata targetAmount, TaskV2[] calldata tasks)
-        external;
+    function withdraw3(address token, bytes32 vaultId, Float calldata targetAmount, TaskV2[] calldata tasks) external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
