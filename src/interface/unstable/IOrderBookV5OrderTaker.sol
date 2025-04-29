@@ -25,8 +25,8 @@ interface IOrderBookV5OrderTaker {
     function onTakeOrders2(
         address inputToken,
         address outputToken,
-        Float calldata inputAmountSent,
-        Float calldata totalOutputAmount,
+        Float inputAmountSent,
+        Float totalOutputAmount,
         bytes calldata takeOrdersData
     ) external;
 }
