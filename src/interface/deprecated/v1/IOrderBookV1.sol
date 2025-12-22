@@ -2,9 +2,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.18;
 
-import "../../ierc3156/IERC3156FlashLender.sol";
-import "rain.interpreter.interface/lib/caller/LibEvaluable.sol";
-import "rain.interpreter.interface/interface/deprecated/IInterpreterCallerV1.sol";
+import {IERC3156FlashLender} from "../../ierc3156/IERC3156FlashLender.sol";
+//forge-lint: disable-next-line(unused-import)
+import {LibEvaluable} from "rain.interpreter.interface/lib/caller/LibEvaluable.sol";
+import {
+    EvaluableConfig,
+    Evaluable,
+    SignedContext,
+    IInterpreterCallerV1
+} from "rain.interpreter.interface/interface/deprecated/IInterpreterCallerV1.sol";
 import {IExpressionDeployerV3} from "rain.interpreter.interface/interface/deprecated/IExpressionDeployerV3.sol";
 
 /// Configuration for a deposit. All deposits are processed by and for
@@ -43,6 +49,7 @@ struct WithdrawConfig {
 /// to compensate for any loss of precision during decimal rescaling.
 /// @param vaultId The vault ID that tokens will move into if this is an input
 /// or move out from if this is an output.
+//forge-lint: disable-next-line(pascal-case-struct)
 struct IO {
     address token;
     uint8 decimals;
@@ -83,6 +90,7 @@ struct OrderConfig {
 /// so these tokens will be sent from the owners vault.
 struct Order {
     address owner;
+    //forge-lint: disable-next-line(mixed-case-variable)
     bool handleIO;
     Evaluable evaluable;
     IO[] validInputs;
@@ -107,6 +115,7 @@ struct TakeOrdersConfig {
     address input;
     uint256 minimumInput;
     uint256 maximumInput;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 maximumIORatio;
     TakeOrderConfig[] orders;
 }
@@ -122,7 +131,9 @@ struct TakeOrdersConfig {
 /// taken order.
 struct TakeOrderConfig {
     Order order;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 inputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 outputIOIndex;
     SignedContext[] signedContext;
 }
@@ -138,9 +149,13 @@ struct TakeOrderConfig {
 /// @param bobBountyVaultId The vault ID that the bounty from order B should move
 /// to for the clearer.
 struct ClearConfig {
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 aliceInputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 aliceOutputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 bobInputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 bobOutputIOIndex;
     uint256 aliceBountyVaultId;
     uint256 bobBountyVaultId;

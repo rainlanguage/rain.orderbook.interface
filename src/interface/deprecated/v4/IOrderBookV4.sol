@@ -2,17 +2,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.18;
 
-import {IERC3156FlashLender} from "./ierc3156/IERC3156FlashLender.sol";
+import {IERC3156FlashLender} from "../../ierc3156/IERC3156FlashLender.sol";
 import {
     EvaluableV3,
     IInterpreterCallerV3,
     SignedContextV1,
+    //forge-lint: disable-next-line(unused-import)
     IInterpreterV3,
+    //forge-lint: disable-next-line(unused-import)
     IInterpreterStoreV2
-} from "../../lib/rain.interpreter.interface/src/interface/IInterpreterCallerV3.sol";
+} from "../../../../lib/rain.interpreter.interface/src/interface/IInterpreterCallerV3.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {ClearStateChange, ClearConfig, IO} from "./deprecated/v3/IOrderBookV3.sol";
+import {ClearStateChange, ClearConfig, IO} from "../v3/IOrderBookV3.sol";
 
 /// Thrown when take orders is called with no orders.
 error NoOrders();
@@ -55,7 +57,9 @@ struct OrderConfigV3 {
 /// taken order.
 struct TakeOrderConfigV3 {
     OrderV3 order;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 inputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 outputIOIndex;
     SignedContextV1[] signedContext;
 }
@@ -102,6 +106,7 @@ struct OrderV3 {
 struct TakeOrdersConfigV3 {
     uint256 minimumInput;
     uint256 maximumInput;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 maximumIORatio;
     TakeOrderConfigV3[] orders;
     bytes data;
@@ -128,7 +133,9 @@ struct TaskV1 {
 /// quote.
 struct Quote {
     OrderV3 order;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 inputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 outputIOIndex;
     SignedContextV1[] signedContext;
 }

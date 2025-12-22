@@ -2,17 +2,25 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.18;
 
-import {IERC3156FlashLender} from "../ierc3156/IERC3156FlashLender.sol";
+import {IERC3156FlashLender} from "./ierc3156/IERC3156FlashLender.sol";
 import {
     EvaluableV4,
     IInterpreterCallerV4,
     SignedContextV1,
+    //forge-lint: disable-next-line(unused-import)
     IInterpreterV4,
+    //forge-lint: disable-next-line(unused-import)
     IInterpreterStoreV3
-} from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV4.sol";
+} from "../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV4.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {NoOrders, ZeroMaximumInput} from "../IOrderBookV4.sol";
+import
+//forge-lint: disable-next-line(unused-import)
+{
+    NoOrders,
+    //forge-lint: disable-next-line(unused-import)
+    ZeroMaximumInput
+} from "./deprecated/v4/IOrderBookV4.sol";
 
 import {Float} from "rain.math.float/lib/LibDecimalFloat.sol";
 
@@ -46,9 +54,13 @@ struct ClearStateChangeV2 {
 /// @param bobBountyVaultId The vault ID that the bounty from order B should move
 /// to for the clearer.
 struct ClearConfigV2 {
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 aliceInputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 aliceOutputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 bobInputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 bobOutputIOIndex;
     bytes32 aliceBountyVaultId;
     bytes32 bobBountyVaultId;
@@ -74,6 +86,7 @@ struct TaskV2 {
 /// withdraw step.
 /// @param vaultId The vault ID that tokens will move into if this is an input
 /// or move out from if this is an output.
+//forge-lint: disable-next-line(pascal-case-struct)
 struct IOV2 {
     address token;
     bytes32 vaultId;
@@ -138,7 +151,9 @@ struct OrderV4 {
 /// taken order.
 struct TakeOrderConfigV4 {
     OrderV4 order;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 inputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 outputIOIndex;
     SignedContextV1[] signedContext;
 }
@@ -161,6 +176,7 @@ struct TakeOrderConfigV4 {
 struct TakeOrdersConfigV4 {
     Float minimumInput;
     Float maximumInput;
+    //forge-lint: disable-next-line(mixed-case-variable)
     Float maximumIORatio;
     TakeOrderConfigV4[] orders;
     bytes data;
@@ -174,7 +190,9 @@ struct TakeOrdersConfigV4 {
 /// quote.
 struct QuoteV2 {
     OrderV4 order;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 inputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 outputIOIndex;
     SignedContextV1[] signedContext;
 }
