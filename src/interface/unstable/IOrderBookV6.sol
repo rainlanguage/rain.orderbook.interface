@@ -35,11 +35,15 @@ import {Float} from "rain.math.float/lib/LibDecimalFloat.sol";
 
 /// Config for a list of orders to take sequentially as part of a `takeOrders`
 /// call.
-/// @param minimumInput Minimum input from the perspective of the order taker.
-/// @param maximumInput Maximum input from the perspective of the order taker.
+/// @param minimumInput Minimum input/output from the perspective of the order
+/// taker.
+/// @param maximumInput Maximum input/output from the perspective of the order
+/// taker.
 /// @param maximumIORatio Maximum IO ratio as calculated by the order being
 /// taken. The input is from the perspective of the order so higher ratio means
 /// worse deal for the order taker.
+/// @param IOIsInput If true, the minimum and maximum amounts are the input from
+/// the perspective of the order taker. If false, they are the output.
 /// @param orders Ordered list of orders that will be taken until the limit is
 /// hit. Takers are expected to prioritise orders that appear to be offering
 /// better deals i.e. lower IO ratios. This prioritisation and sorting MUST
