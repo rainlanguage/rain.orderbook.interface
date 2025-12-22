@@ -361,7 +361,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     function deposit3(address token, bytes32 vaultId, Float depositAmount, TaskV2[] calldata tasks) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
-    /// withrawer has an active flash loan debt denominated in the same token
+    /// withdrawer has an active flash loan debt denominated in the same token
     /// being withdrawn then Orderbook will merely reduce the debt and NOT send
     /// the amount of tokens repaid to the flashloan debt.
     ///
