@@ -290,7 +290,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     event OrderZeroAmount(address sender, address owner, bytes32 orderHash);
 
     /// Emitted when an order evaluates to a ratio exceeding the counterparty's
-    /// maximum limit. An error rather than an error so that we allow attempting
+    /// maximum limit. An event rather than an error so that we allow attempting
     /// many orders in a loop and NOT rollback on a "best effort" basis to clear.
     /// @param sender `msg.sender` clearing the order that had an excess ratio.
     /// @param owner Owner of the order that had an excess ratio.
