@@ -50,7 +50,9 @@ struct OrderConfigV2 {
 /// taken order.
 struct TakeOrderConfigV2 {
     OrderV2 order;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 inputIOIndex;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 outputIOIndex;
     SignedContextV1[] signedContext;
 }
@@ -71,6 +73,7 @@ struct TakeOrderConfigV2 {
 /// so these tokens will be sent from the owners vault.
 struct OrderV2 {
     address owner;
+    //forge-lint: disable-next-line(mixed-case-variable)
     bool handleIO;
     EvaluableV2 evaluable;
     IO[] validInputs;
@@ -95,6 +98,7 @@ struct OrderV2 {
 struct TakeOrdersConfigV2 {
     uint256 minimumInput;
     uint256 maximumInput;
+    //forge-lint: disable-next-line(mixed-case-variable)
     uint256 maximumIORatio;
     TakeOrderConfigV2[] orders;
     bytes data;

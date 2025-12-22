@@ -4,152 +4,46 @@ pragma solidity ^0.8.18;
 
 import {IERC3156FlashLender} from "../ierc3156/IERC3156FlashLender.sol";
 import {
-    EvaluableV4,
     IInterpreterCallerV4,
     SignedContextV1,
+    //forge-lint: disable-next-line(unused-import)
+    EvaluableV4,
+    //forge-lint: disable-next-line(unused-import)
     IInterpreterV4,
+    //forge-lint: disable-next-line(unused-import)
     IInterpreterStoreV3
 } from "../../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV4.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import {NoOrders, ZeroMaximumInput} from "../IOrderBookV4.sol";
+import {
+    ClearStateChangeV2,
+    //forge-lint: disable-next-line(unused-import)
+    NoOrders,
+    //forge-lint: disable-next-line(unused-import)
+    ZeroMaximumInput,
+    ClearConfigV2,
+    TaskV2,
+    //forge-lint: disable-next-line(unused-import)
+    IOV2,
+    OrderConfigV4,
+    OrderV4,
+    TakeOrderConfigV4,
+    QuoteV2
+} from "../IOrderBookV5.sol";
 
 import {Float} from "rain.math.float/lib/LibDecimalFloat.sol";
 
-/// Summary of the vault state changes due to clearing an order. NOT the state
-/// changes sent to the interpreter store, these are the LOCAL CHANGES in vault
-/// balances. Note that the difference in inputs/outputs overall between the
-/// counterparties is the bounty paid to the entity that cleared the order.
-/// @param aliceOutput Amount of counterparty A's output token that moved out of
-/// their vault.
-/// @param bobOutput Amount of counterparty B's output token that moved out of
-/// their vault.
-/// @param aliceInput Amount of counterparty A's input token that moved into
-/// their vault.
-/// @param bobInput Amount of counterparty B's input token that moved into their
-/// vault.
-struct ClearStateChangeV2 {
-    Float aliceOutput;
-    Float bobOutput;
-    Float aliceInput;
-    Float bobInput;
-}
-
-/// Additional config to a `clear` that allows two orders to be fully matched to
-/// a specific token moment. Also defines the bounty for the clearer.
-/// @param aliceInputIOIndex The index of the input token in order A.
-/// @param aliceOutputIOIndex The index of the output token in order A.
-/// @param bobInputIOIndex The index of the input token in order B.
-/// @param bobOutputIOIndex The index of the output token in order B.
-/// @param aliceBountyVaultId The vault ID that the bounty from order A should
-/// move to for the clearer.
-/// @param bobBountyVaultId The vault ID that the bounty from order B should move
-/// to for the clearer.
-struct ClearConfigV2 {
-    uint256 aliceInputIOIndex;
-    uint256 aliceOutputIOIndex;
-    uint256 bobInputIOIndex;
-    uint256 bobOutputIOIndex;
-    bytes32 aliceBountyVaultId;
-    bytes32 bobBountyVaultId;
-}
-
-/// A task combines evaluable logic with additional context to be run by
-/// Orderbook. Tasks are expected to be provided to a primary call such as
-/// `deposit`, `withdraw`, `addOrder`, `removeOrder` etc. to allow the caller
-/// to run additional logic afterwards. This is useful for governance wrappers,
-/// fee collectors, or other external systems that need to respond to the
-/// primary call.
-/// @param evaluable The evaluable logic to run as part of the task.
-/// @param signedContext Additional context to be provided to the evaluable.
-struct TaskV2 {
-    EvaluableV4 evaluable;
-    SignedContextV1[] signedContext;
-}
-
-/// Configuration for a single input or output on an `Order`.
-/// @param token The token to either send from the owner as an output or receive
-/// from the counterparty to the owner as an input. The tokens are not moved
-/// during an order, only internal vault balances are updated, until a separate
-/// withdraw step.
-/// @param vaultId The vault ID that tokens will move into if this is an input
-/// or move out from if this is an output.
-struct IOV2 {
-    address token;
-    bytes32 vaultId;
-}
-
-/// Config the order owner may provide to define their order. The `msg.sender`
-/// that adds an order cannot modify the owner nor bypass the integrity check of
-/// the expression deployer that they specify. However they MAY specify a
-/// deployer with a corrupt integrity check, so counterparties and clearers MUST
-/// check the DISpair of the order and avoid untrusted pairings.
-/// @param evaluable Standard `EvaluableV3` used to evaluate the order.
-/// @param validInputs As per `validInputs` on the `Order`.
-/// @param validOutputs As per `validOutputs` on the `Order`.
-/// @param nonce As per `nonce` on the `Order`.
-/// @param secret Secret to use for cryptography related to the order. This is
-/// useless on public chains. MAY be useful in confidential chains, such as to
-/// encrypt event data that records the behaviour of the order.
-/// @param meta Arbitrary bytes that will NOT be used in the order evaluation
-/// but MUST be emitted as a Rain `MetaV1` when the order is placed so can be
-/// used by offchain processes.
-struct OrderConfigV4 {
-    EvaluableV4 evaluable;
-    IOV2[] validInputs;
-    IOV2[] validOutputs;
-    bytes32 nonce;
-    bytes32 secret;
-    bytes meta;
-}
-
-/// Defines a fully deployed order ready to evaluate by Orderbook. Identical to
-/// `Order` except for the newer `EvaluableV2`.
-/// @param owner The owner of the order is the `msg.sender` that added the order.
-/// @param evaluable Standard `EvaluableV2` with entrypoints for both
-/// "calculate order" and "handle IO". The latter MAY be empty bytes, in which
-/// case it will be skipped at runtime to save gas.
-/// @param validInputs A list of input tokens that are economically equivalent
-/// for the purpose of processing this order. Inputs are relative to the order
-/// so these tokens will be sent to the owners vault.
-/// @param validOutputs A list of output tokens that are economically equivalent
-/// for the purpose of processing this order. Outputs are relative to the order
-/// so these tokens will be sent from the owners vault.
-/// @param nonce A unique value for the order that the owner can use to prevent
-/// the order hash being predictable or collide with existing orders. This MAY
-/// be useful to prevent `addOrder` noops for orders with identical logic, or
-/// to hide information on confidential chains.
-struct OrderV4 {
-    address owner;
-    EvaluableV4 evaluable;
-    IOV2[] validInputs;
-    IOV2[] validOutputs;
-    bytes32 nonce;
-}
-
-/// Config for an individual take order from the overall list of orders in a
-/// call to `takeOrders`.
-/// @param order The order being taken this iteration.
-/// @param inputIOIndex The index of the input token in `order` to match with the
-/// take order output.
-/// @param outputIOIndex The index of the output token in `order` to match with
-/// the take order input.
-/// @param signedContext Optional additional signed context relevant to the
-/// taken order.
-struct TakeOrderConfigV4 {
-    OrderV4 order;
-    uint256 inputIOIndex;
-    uint256 outputIOIndex;
-    SignedContextV1[] signedContext;
-}
-
 /// Config for a list of orders to take sequentially as part of a `takeOrders`
 /// call.
-/// @param minimumInput Minimum input from the perspective of the order taker.
-/// @param maximumInput Maximum input from the perspective of the order taker.
+/// @param minimumInput Minimum input/output from the perspective of the order
+/// taker.
+/// @param maximumInput Maximum input/output from the perspective of the order
+/// taker.
 /// @param maximumIORatio Maximum IO ratio as calculated by the order being
 /// taken. The input is from the perspective of the order so higher ratio means
 /// worse deal for the order taker.
+/// @param IOIsInput If true, the minimum and maximum amounts are the input from
+/// the perspective of the order taker. If false, they are the output.
 /// @param orders Ordered list of orders that will be taken until the limit is
 /// hit. Takers are expected to prioritise orders that appear to be offering
 /// better deals i.e. lower IO ratios. This prioritisation and sorting MUST
@@ -158,28 +52,20 @@ struct TakeOrderConfigV4 {
 /// `takeOrders` with this data. This allows the caller to perform arbitrary
 /// onchain actions between receiving their input tokens, before having to send
 /// their output tokens.
-struct TakeOrdersConfigV4 {
-    Float minimumInput;
-    Float maximumInput;
+struct TakeOrdersConfigV5 {
+    //forge-lint: disable-next-line(mixed-case-variable)
+    Float minimumIO;
+    //forge-lint: disable-next-line(mixed-case-variable)
+    Float maximumIO;
+    //forge-lint: disable-next-line(mixed-case-variable)
     Float maximumIORatio;
+    //forge-lint: disable-next-line(mixed-case-variable)
+    bool IOIsInput;
     TakeOrderConfigV4[] orders;
     bytes data;
 }
 
-/// Configuration for a quote request.
-/// @param order The order to quote.
-/// @param inputIOIndex The index of the input token in `order` to quote.
-/// @param outputIOIndex The index of the output token in `order` to quote.
-/// @param signedContext Optional additional signed context relevant to the
-/// quote.
-struct QuoteV2 {
-    OrderV4 order;
-    uint256 inputIOIndex;
-    uint256 outputIOIndex;
-    SignedContextV1[] signedContext;
-}
-
-/// @title IOrderBookV5
+/// @title IOrderBookV6
 /// @notice An orderbook that deploys _strategies_ represented as interpreter
 /// expressions rather than individual orders. The order book contract itself
 /// behaves similarly to an `ERC4626` vault but with much more fine grained
@@ -269,7 +155,7 @@ struct QuoteV2 {
 /// down and IO ratios are rounded up. Input and output amounts are always
 /// converted to absolute values before applying to vault balances such that
 /// orderbook always retains fully collateralised inventory of underlying token
-/// balances to support withdrawals, with the caveat that dynamic token balanes
+/// balances to support withdrawals, with the caveat that dynamic token balances
 /// are not supported.
 ///
 /// When an order clears it is NOT removed. Orders remain active until the owner
@@ -295,13 +181,14 @@ struct QuoteV2 {
 /// notably the interpreter's store, is malicious and guard against reentrancy
 /// etc.
 ///
-/// As Orderbook supports any expression that can run on any `IInterpreterV1` and
+/// As Orderbook supports any expression that can run on any `IInterpreterV4` and
 /// counterparties are available to the order, order strategies are free to
 /// implement KYC/membership, tracking, distributions, stock, buybacks, etc. etc.
 ///
-/// Main differences between `IOrderBookV4` and `IOderBookV5`:
-/// - Calcuations and vault balances are rain floating point values.
-interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
+/// Main differences between `IOrderBookV5` and `IOrderBookV6`:
+/// - Supports vaultless orders.
+/// - Supports take order configuration based on taker output rather than input.
+interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// MUST be thrown by `deposit` if the amount is zero.
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
@@ -403,7 +290,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     event OrderZeroAmount(address sender, address owner, bytes32 orderHash);
 
     /// Emitted when an order evaluates to a ratio exceeding the counterparty's
-    /// maximum limit. An error rather than an error so that we allow attempting
+    /// maximum limit. An event rather than an error so that we allow attempting
     /// many orders in a loop and NOT rollback on a "best effort" basis to clear.
     /// @param sender `msg.sender` clearing the order that had an excess ratio.
     /// @param owner Owner of the order that had an excess ratio.
@@ -452,7 +339,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// allows much more granular and direct control over token movements within
     /// Orderbook than either ERC4626 vault shares or mere contract-level ERC20
     /// allowances can facilitate.
-    //
+    ///
     /// Vault IDs are namespaced by the token address so there is no risk of
     /// collision between tokens. For example, vault ID 0 for token A is
     /// completely different to vault ID 0 for token B.
@@ -461,6 +348,9 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// handle `0` value transfers differently and this would be a source of
     /// confusion. The order book MUST revert with `ZeroDepositAmount` if the
     /// amount is zero.
+    ///
+    /// Vault ID `0` is disallowed for deposits to avoid collision with vaultless
+    /// orders.
     ///
     /// @param token The token to deposit.
     /// @param vaultId The vault ID to deposit under.
@@ -471,7 +361,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     function deposit3(address token, bytes32 vaultId, Float depositAmount, TaskV2[] calldata tasks) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
-    /// withrawer has an active flash loan debt denominated in the same token
+    /// withdrawer has an active flash loan debt denominated in the same token
     /// being withdrawn then Orderbook will merely reduce the debt and NOT send
     /// the amount of tokens repaid to the flashloan debt.
     ///
@@ -479,6 +369,8 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// MAY still not move any tokens (without revert) if the vault balance is
     /// zero, or the withdrawal is used to repay a flash loan, or due to any
     /// other internal accounting.
+    ///
+    /// Vault ID `0` is supported to allow withdrawing from vaultless orders.
     ///
     /// @param token The token to withdraw.
     /// @param vaultId The vault ID to withdraw from.
@@ -533,6 +425,10 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// order book modifies state it MUST emit an `AddOrder` event and return
     /// true.
     ///
+    /// If vault ID is `0` for any input or output, this indicates a vaultless
+    /// order for that token. Vaultless orders draw from or pay to the order's
+    /// owner's wallet directly rather than any internal vault.
+    ///
     /// @param config All config required to build an `Order`.
     /// @param tasks Additional tasks to run after the order is added.
     /// Order information SHOULD be made available during evaluation in context.
@@ -546,6 +442,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// an order that never existed are valid, the event will be emitted and the
     /// transaction will complete with that order hash definitely, redundantly
     /// not live.
+    ///
     /// @param order The `Order` data exactly as it was added.
     /// @param tasks Additional tasks to run after the order is removed.
     /// Order information SHOULD be made available during evaluation in context.
@@ -592,7 +489,7 @@ interface IOrderBookV5 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// vaults processed.
     /// @return totalTakerOutput Total tokens taken from `msg.sender` and distributed
     /// between vaults.
-    function takeOrders3(TakeOrdersConfigV4 calldata config)
+    function takeOrders4(TakeOrdersConfigV5 calldata config)
         external
         returns (Float totalTakerInput, Float totalTakerOutput);
 
