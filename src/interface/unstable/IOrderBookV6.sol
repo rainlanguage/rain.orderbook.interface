@@ -339,7 +339,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// allows much more granular and direct control over token movements within
     /// Orderbook than either ERC4626 vault shares or mere contract-level ERC20
     /// allowances can facilitate.
-    //
+    ///
     /// Vault IDs are namespaced by the token address so there is no risk of
     /// collision between tokens. For example, vault ID 0 for token A is
     /// completely different to vault ID 0 for token B.
