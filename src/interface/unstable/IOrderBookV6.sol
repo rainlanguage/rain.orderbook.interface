@@ -155,7 +155,7 @@ struct TakeOrdersConfigV5 {
 /// down and IO ratios are rounded up. Input and output amounts are always
 /// converted to absolute values before applying to vault balances such that
 /// orderbook always retains fully collateralised inventory of underlying token
-/// balances to support withdrawals, with the caveat that dynamic token balanes
+/// balances to support withdrawals, with the caveat that dynamic token balances
 /// are not supported.
 ///
 /// When an order clears it is NOT removed. Orders remain active until the owner
