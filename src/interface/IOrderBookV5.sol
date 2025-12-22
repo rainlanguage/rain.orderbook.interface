@@ -14,13 +14,9 @@ import {
 } from "../../lib/rain.interpreter.interface/src/interface/unstable/IInterpreterCallerV4.sol";
 
 /// Import unmodified structures from older versions of `IOrderBook`.
-import
-//forge-lint: disable-next-line(unused-import)
-{
-    NoOrders,
-    //forge-lint: disable-next-line(unused-import)
-    ZeroMaximumInput
-} from "./deprecated/v4/IOrderBookV4.sol";
+//forge-lint: disable-start(unused-import)
+import {NoOrders, ZeroMaximumInput} from "./deprecated/v4/IOrderBookV4.sol";
+//forge-lint: disable-end(unused-import)
 
 import {Float} from "rain.math.float/lib/LibDecimalFloat.sol";
 
