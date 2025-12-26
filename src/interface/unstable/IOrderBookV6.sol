@@ -189,6 +189,11 @@ struct TakeOrdersConfigV5 {
 /// - Supports vaultless orders.
 /// - Supports take order configuration based on taker output rather than input.
 interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
+    /// MUST be thrown by `deposit` and `withdraw` if the vault ID is zero.
+    /// @param sender `msg.sender` depositing or withdrawing tokens.
+    /// @param token The token being deposited or withdrawn.
+    error ZeroVaultId(address sender, address token);
+
     /// MUST be thrown by `deposit` if the amount is zero.
     /// @param sender `msg.sender` depositing tokens.
     /// @param token The token being deposited.
@@ -341,8 +346,8 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// allowances can facilitate.
     ///
     /// Vault IDs are namespaced by the token address so there is no risk of
-    /// collision between tokens. For example, vault ID 0 for token A is
-    /// completely different to vault ID 0 for token B.
+    /// collision between tokens. For example, vault ID 1 for token A is
+    /// completely different to vault ID 1 for token B.
     ///
     /// `0` amount deposits are unsupported as underlying token contracts
     /// handle `0` value transfers differently and this would be a source of
@@ -358,7 +363,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param tasks Additional tasks to run after the deposit. Deposit
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the post tasks revert, the deposit MUST be reverted.
-    function deposit3(address token, bytes32 vaultId, Float depositAmount, TaskV2[] calldata tasks) external;
+    function deposit4(address token, bytes32 vaultId, Float depositAmount, TaskV2[] calldata tasks) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withdrawer has an active flash loan debt denominated in the same token
@@ -370,7 +375,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// zero, or the withdrawal is used to repay a flash loan, or due to any
     /// other internal accounting.
     ///
-    /// Vault ID `0` is supported to allow withdrawing from vaultless orders.
+    /// Vault ID `0` is NOT supported due to collision with vaultless orders.
     ///
     /// @param token The token to withdraw.
     /// @param vaultId The vault ID to withdraw from.
@@ -381,7 +386,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// @param tasks Additional tasks to run after the withdraw. Withdraw
     /// information SHOULD be made available during evaluation in context.
     /// If ANY of the tasks revert, the withdraw MUST be reverted.
-    function withdraw3(address token, bytes32 vaultId, Float targetAmount, TaskV2[] calldata tasks) external;
+    function withdraw4(address token, bytes32 vaultId, Float targetAmount, TaskV2[] calldata tasks) external;
 
     /// Returns true if the order exists, false otherwise.
     /// @param orderHash The hash of the order to check.
@@ -435,7 +440,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     /// If ANY of the tasks revert, the order MUST NOT be added.
     /// @return stateChanged True if the order was added, false if it already
     /// existed.
-    function addOrder3(OrderConfigV4 calldata config, TaskV2[] calldata tasks) external returns (bool stateChanged);
+    function addOrder4(OrderConfigV4 calldata config, TaskV2[] calldata tasks) external returns (bool stateChanged);
 
     /// Order owner can remove their own orders. Delegated order removal is NOT
     /// supported and will revert. Removing an order multiple times or removing
