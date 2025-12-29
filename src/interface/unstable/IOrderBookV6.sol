@@ -17,10 +17,6 @@ import {
 /// Import unmodified structures from older versions of `IOrderBook`.
 import {
     ClearStateChangeV2,
-    //forge-lint: disable-next-line(unused-import)
-    NoOrders,
-    //forge-lint: disable-next-line(unused-import)
-    ZeroMaximumInput,
     ClearConfigV2,
     TaskV2,
     //forge-lint: disable-next-line(unused-import)
@@ -219,6 +215,12 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
 
     /// MUST be thrown by `addOrder` if the order has no outputs.
     error OrderNoOutputs();
+
+    /// MUST be thrown by `takeOrders` if the maximum input/output is zero.
+    error ZeroMaximumInput();
+
+    /// MUST be thrown when take orders is called with no orders.
+    error NoOrders();
 
     /// Some tokens have been deposited to a vault.
     /// @param sender `msg.sender` depositing tokens. Delegated deposits are NOT
