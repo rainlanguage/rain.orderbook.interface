@@ -217,7 +217,7 @@ interface IOrderBookV6 is IERC3156FlashLender, IInterpreterCallerV4 {
     error OrderNoOutputs();
 
     /// MUST be thrown by `takeOrders` if the maximum input/output is zero.
-    error ZeroMaximumInput();
+    error ZeroMaximumIO();
 
     /// MUST be thrown when take orders is called with no orders.
     error NoOrders();
