@@ -52,10 +52,7 @@ All amounts and ratios are Rain floating point (`Float` from `rain.math.float`).
 
 ### Dependencies
 
-Single git submodule: `lib/rain.interpreter.interface` (interpreter interfaces, math libraries, utilities). Remapping in `foundry.toml`:
-```
-rain.math.float/=lib/rain.interpreter.interface/lib/rain.math.float/src/
-```
+Soldeer packages, declared in `[dependencies]` in `foundry.toml` and locked in `soldeer.lock` (run `forge soldeer update` after changing them). Import paths carry the package version (e.g. `rainlang-interface-0.2.3/src/...`). Direct deps: `rainlang-interface` (Rainlang interpreter interfaces and caller libs) and `rain-math-float` (Float). Soldeer resolution is flat, so `[dependencies]` also declares everything `rainlang-interface`'s own src imports (`@openzeppelin-contracts`, `rain-lib-hash`, `rain-math-binary`, `rain-sol-codegen`, `rain-solmem`).
 
 ## Conventions
 
