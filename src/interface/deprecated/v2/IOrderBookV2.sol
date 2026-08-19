@@ -11,9 +11,7 @@ import {
     SignedContextV1,
     IInterpreterCallerV2
 } from "rainlang-interface-0.2.3/src/interface/deprecated/v1/IInterpreterCallerV2.sol";
-import {
-    IExpressionDeployerV2
-} from "rainlang-interface-0.2.3/src/interface/deprecated/v1/IExpressionDeployerV2.sol";
+import {IExpressionDeployerV2} from "rainlang-interface-0.2.3/src/interface/deprecated/v1/IExpressionDeployerV2.sol";
 
 /// Configuration for a deposit. All deposits are processed by and for
 /// `msg.sender` so the vaults are unambiguous here.
